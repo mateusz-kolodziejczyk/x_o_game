@@ -136,6 +136,7 @@ end
 -- False if invalid move
 local function checkMove(event)
     -- determine location of tap on board
+    print(players[player].name .. "'s move at square " .. event.target.k)
     -- current player must be human
     -- current square must be empty
     -- implement valid move
@@ -170,7 +171,9 @@ local function createBoard()
         local x = display.contentCenterX + (col-4/2)*size
         local y = display.contentCenterY + (row-4/2)*size
         local rect = display.newRect(uiGroup, x, y, size-gap, size-gap)
-        rect.alpha = 0.5
+        rect.alpha = 0.05
+        rect.k = k
+        rect:addEventListener("tap", checkMove )
         squares[k] = {rect=rect}
     end
     resetBoard()
