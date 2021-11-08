@@ -165,7 +165,7 @@ local function createBoard()
     -- Horizontal lines
     drawLine(-3/2, -1/2, 3/2, -1/2)
     drawLine(-3/2, 1/2, 3/2, 1/2)
-    for k = 1, 1 do
+    for k = 1, 9 do
         local row, col = mylib.k2rc(k)
         local x = display.contentCenterX + (col-4/2)*size
         local y = display.contentCenterY + (row-4/2)*size
