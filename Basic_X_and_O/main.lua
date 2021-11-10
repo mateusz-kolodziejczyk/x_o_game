@@ -9,7 +9,7 @@
 local mylib = require("mylib")
 local rng = require("rng")
 local colors = require("colorsRGB")
--- ai= require("first_space_player")
+ai= require("first_space_player")
 -- ai=require("rule_based_player")
 -- ai = require("minimax_player")
 rng.randomseed(os.time())
@@ -23,7 +23,7 @@ local squares = {} -- 1d represetation of game board (ui, events)
 
 local players = {
     {name="X", human=true, value=1, wins=0},
-    {name="O", human=true, value=2, wins=0},
+    {name="O", human=false, value=-1, wins=0},
 }
 local player = 1 -- current player
 local gameCount = 0
@@ -36,21 +36,12 @@ local background = display.newImageRect(backGroup,"assets/images/background.png"
 background.x = display.contentCenterX
 background.y = display.contentCenterY
 
-local titleText, startsTest, turnText
+local titleText, startsTest, turnText, gameOverText
+local gameOverImage
 
-local gameOverImage = display.newRect(mainGroup, 0, 0, display.actualContentWidth, display.actualContentHeight)
-gameOverImage.x = display.contentCenterX
-gameOverImage.y = display.contentCenterY
-gameOverImage:setFillColor(colors.RGB("black"))
-gameOverImage.alpha = 0
 
--- Initiate game over text
-local gameOverText = display.newText(uiGroup, "", 100, 200, "assets/fonts/Bangers.ttf", 40)
-gameOverText.x = display.contentCenterX
-gameOverText.y = display.contentCenterY - size
-gameOverText:setFillColor(colors.RGB("pink"))
-
-local resetBoard
+-- Functions
+local resetBoard, move
 ---------------
 -- Audio
 ---------------
@@ -129,10 +120,15 @@ local function nextPlayer(value)
 
     state = players[player].human and "waiting" or "thinking"
 
+    if state == 'thinking' then
+        i = ai.move(board, players, player)
+        print("Chosen k: " .. i)
+        move(i)
+    end
 end
 
 -- carries out a valid move
-function move(k)
+move = function(k)
     -- determine location of valid move
     local row, col = mylib.k2rc(k)
     local square = squares[k]
@@ -153,7 +149,7 @@ function move(k)
     elseif isTie() then
         state = 'over'
         gameCount = gameCount + 1
-        displayMessage("Game ends with a Tie")
+        displayMessage("Tie")
     else
         nextPlayer()
     end
@@ -183,13 +179,20 @@ end
 
 -- reset game state (without unnecessary destroying)
 resetBoard = function ()
-    print("resetBoard")
 
     -- tidy up of UI elements
     for _, square in ipairs(squares) do
         display.remove(square.symbol)
         square.symbol = nil
     end
+    local tieCount = gameCount - players[1].wins - players[2].wins
+    local s = string.format("Games: %3d    %s: %d    %s: %d    tie: %d",
+        gameCount, 
+        players[1].name, players[1].wins, 
+        players[2].name, players[2].wins, 
+        tieCount
+    )
+    statsText.text = s
     gameOverImage.alpha = 0
     gameOverText.text = ""
     -- reset game logic
@@ -221,6 +224,27 @@ local function createBoard()
         rect:addEventListener("tap", checkMove )
         squares[k] = {rect=rect}
     end
+    -- Transparent overlay
+    gameOverImage = display.newRect(mainGroup, 0, 0, display.actualContentWidth, display.actualContentHeight)
+    gameOverImage.x = display.contentCenterX
+    gameOverImage.y = display.contentCenterY
+    gameOverImage:setFillColor(colors.RGB("black"))
+    gameOverImage.alpha = 0
+
+    -- Instantiating text
+    titleText = display.newText(uiGroup, "X's and O's", 100, 200, "assets/fonts/Bangers.ttf", 40)
+    titleText.x = display.contentCenterX
+    titleText.y = display.contentCenterY - 2.5*size
+    titleText:setFillColor(colors.RGB("moccasin"))
+
+    statsText = display.newText(uiGroup, "", 100, 200, "assets/fonts/Bangers.ttf", 26)
+    statsText.x = display.contentCenterX
+    statsText.y = display.contentCenterY - 2*size
+    -- Initiate game over text
+    gameOverText = display.newText(uiGroup, "", 100, 200, "assets/fonts/Bangers.ttf", 40)
+    gameOverText.x = display.contentCenterX
+    gameOverText.y = display.contentCenterY - size
+    gameOverText:setFillColor(colors.RGB("pink"))
     resetBoard()
 end
 
