@@ -10,7 +10,7 @@ local mylib = require("mylib")
 local rng = require("rng")
 local colors = require("colorsRGB")
 ai= require("first_space_player")
--- ai=require("rule_based_player")
+--ai=require("random_impact_player")
 -- ai = require("minimax_player")
 rng.randomseed(os.time())
 
@@ -45,50 +45,7 @@ local resetBoard, move
 ---------------
 -- Audio
 ---------------
-----------------
--- Logic functions
-----------------
 
-local function isRowWin()
-    for r = 1, 3 do
-        if board[r][1] ~= 0 and board[r][1]==board[r][2] and board[r][2]==board[r][3] then
-            return r
-        end
-    end
-    return 0
-end
-
-local function isColWin()
-    for c = 1, 3 do
-        if board[1][c] ~= 0 and board[1][c]==board[2][c] and board[2][c]==board[3][c] then
-            return c
-        end
-    end
-    return 0
-end
-
-local function isDiagonalWin()
-    return board[1][1]~=0 and board[1][1]==board[2][2] and board[2][2]==board[3][3]
-end
-
-local function isAntiDiagonalWin()
-    return board[1][3]~=0 and board[1][3]==board[2][2] and board[2][2]==board[3][1]
-end
-
-local function isWin()
-    return isRowWin()>0 or isColWin()>0 or isDiagonalWin() or isAntiDiagonalWin()
-end
-
-local function isTie()
-    for row = 1, 3 do
-        for col = 1, 3 do
-            if board[row][col] == 0 then
-                return false
-            end
-        end
-    end
-    return true
-end
 
 ---------------------------
 -- UI and playing functions
@@ -130,7 +87,6 @@ end
 -- carries out a valid move
 move = function(k)
     -- determine location of valid move
-    local row, col = mylib.k2rc(k)
     local square = squares[k]
 
     -- update ui and logic
@@ -139,14 +95,14 @@ move = function(k)
     symbol.x = square.rect.x
     symbol.y = square.rect.y
     square.symbol = symbol
-    board[row][col] = players[player].value
+    board[k] = players[player].value
     -- check if game win
-    if isWin() then 
+    if mylib.isWin(board) then 
         state = 'over'
         gameCount = gameCount + 1
         players[player].wins = players[player].wins + 1
         displayMessage("Player " .. players[player].name .. " Wins")
-    elseif isTie() then
+    elseif mylib.isTie(board) then
         state = 'over'
         gameCount = gameCount + 1
         displayMessage("Tie")
@@ -162,14 +118,13 @@ end
 local function checkMove(event)
     -- determine location of tap on board
     print(players[player].name .. "'s move at square " .. event.target.k)
-    local row, col = mylib.k2rc(event.target.k)
     -- current player must be human
     if state~="waiting" then
         print("\t not waiting for human input - ignore move")
         return false
     end
     -- current square must be empty
-    if board[row][col] ~= 0 then
+    if board[event.target.k] ~= 0 then
         print("\t cannot move to non empty space - ignore move")
         return false
     end
@@ -197,11 +152,8 @@ resetBoard = function ()
     gameOverText.text = ""
     -- reset game logic
     board = {}
-    for row = 1, 3 do
-        board[row] = {}
-        for col = 1, 3 do
-            board[row][col] = 0
-        end
+    for k = 1, 9 do
+            board[k] = 0
     end
     nextPlayer(1)
 end

@@ -1,5 +1,6 @@
 local ai = {}
 local mylib = require('mylib')
+
 ai.move = function(board, players, player)
     for row = 1, 3 do
         for col = 1, 3 do
