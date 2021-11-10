@@ -36,8 +36,21 @@ local background = display.newImageRect(backGroup,"assets/images/background.png"
 background.x = display.contentCenterX
 background.y = display.contentCenterY
 
-local titleText, startsTest, gameOverText, turnText
+local titleText, startsTest, turnText
 
+local gameOverImage = display.newRect(mainGroup, 0, 0, display.actualContentWidth, display.actualContentHeight)
+gameOverImage.x = display.contentCenterX
+gameOverImage.y = display.contentCenterY
+gameOverImage:setFillColor(colors.RGB("black"))
+gameOverImage.alpha = 0
+
+-- Initiate game over text
+local gameOverText = display.newText(uiGroup, "", 100, 200, "assets/fonts/Bangers.ttf", 40)
+gameOverText.x = display.contentCenterX
+gameOverText.y = display.contentCenterY - size
+gameOverText:setFillColor(colors.RGB("pink"))
+
+local resetBoard
 ---------------
 -- Audio
 ---------------
@@ -104,6 +117,9 @@ local function drawLine(x1, y1, x2, y2, width)
 end
 -- display end of game message
 local function displayMessage(message) 
+    gameOverText.text = message
+    gameOverImage.alpha = 0.5
+    timer.performWithDelay(2500,resetBoard)
 
 end
 
@@ -130,7 +146,14 @@ function move(k)
     board[row][col] = players[player].value
     -- check if game win
     if isWin() then 
+        state = 'over'
+        gameCount = gameCount + 1
+        players[player].wins = players[player].wins + 1
+        displayMessage("Player " .. players[player].name .. " Wins")
     elseif isTie() then
+        state = 'over'
+        gameCount = gameCount + 1
+        displayMessage("Game ends with a Tie")
     else
         nextPlayer()
     end
@@ -159,9 +182,16 @@ local function checkMove(event)
 end
 
 -- reset game state (without unnecessary destroying)
-local function resetBoard()
-    -- tidy up of UI elements
+resetBoard = function ()
+    print("resetBoard")
 
+    -- tidy up of UI elements
+    for _, square in ipairs(squares) do
+        display.remove(square.symbol)
+        square.symbol = nil
+    end
+    gameOverImage.alpha = 0
+    gameOverText.text = ""
     -- reset game logic
     board = {}
     for row = 1, 3 do
