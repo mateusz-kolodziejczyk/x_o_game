@@ -23,7 +23,7 @@ local squares = {} -- 1d represetation of game board (ui, events)
 
 local players = {
     {name="X", human=true, value=1, wins=0},
-    {name="O", human=true, value=1, wins=0},
+    {name="O", human=true, value=2, wins=0},
 }
 local player = 1 -- current player
 local gameCount = 0
@@ -116,15 +116,21 @@ local function nextPlayer(value)
 end
 
 -- carries out a valid move
-function move()
+function move(k)
     -- determine location of valid move
+    local row, col = mylib.k2rc(k)
+    local square = squares[k]
 
     -- update ui and logic
+    local filename = "assets/images/" .. players[player].name .. ".png"
+    local symbol = display.newImageRect(mainGroup, filename, size-4*gap, size-4*gap)
+    symbol.x = square.rect.x
+    symbol.y = square.rect.y
+    square.symbol = symbol
+    board[row][col] = players[player].value
     -- check if game win
-    if isWin() == true then 
-        isWin()
-    elseif isTie() == true then 
-        isTie()
+    if isWin() then 
+    elseif isTie() then
     else
         nextPlayer()
     end
@@ -137,10 +143,19 @@ end
 local function checkMove(event)
     -- determine location of tap on board
     print(players[player].name .. "'s move at square " .. event.target.k)
+    local row, col = mylib.k2rc(event.target.k)
     -- current player must be human
+    if state~="waiting" then
+        print("\t not waiting for human input - ignore move")
+        return false
+    end
     -- current square must be empty
+    if board[row][col] ~= 0 then
+        print("\t cannot move to non empty space - ignore move")
+        return false
+    end
     -- implement valid move
-    move()
+    move(event.target.k)
 end
 
 -- reset game state (without unnecessary destroying)
