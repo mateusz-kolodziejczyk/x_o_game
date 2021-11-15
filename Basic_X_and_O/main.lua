@@ -9,9 +9,9 @@
 local mylib = require("mylib")
 local rng = require("rng")
 local colors = require("colorsRGB")
-ai= require("first_space_player")
+--ai= require("first_space_player")
 --ai=require("random_impact_player")
--- ai = require("minimax_player")
+ai = require("minimax_player")
 rng.randomseed(os.time())
 
 local backGroup = display.newGroup()
@@ -42,10 +42,20 @@ local gameOverImage
 
 -- Functions
 local resetBoard, move
----------------
--- Audio
----------------
+-----------------------------------------------------------------------------------------
+-- audio setup
+-----------------------------------------------------------------------------------------
+local tapSound, winSound, buttonSound
 
+audio.reserveChannels( 3 )
+
+-- Reduce the overall volume of the channel
+local bgMusic = audio.loadStream( "assets/audio/bgMusic.mp3" )
+
+audio.setVolume( 0.4, { channel=1 } )
+audio.setVolume( 0.8, { channel=2 } )
+audio.setVolume( 0.9, { channel=3 } )
+-- audio.play( bgMusic, { channel=1, loops=-1 } )
 
 ---------------------------
 -- UI and playing functions
@@ -197,6 +207,11 @@ local function createBoard()
     gameOverText.x = display.contentCenterX
     gameOverText.y = display.contentCenterY - size
     gameOverText:setFillColor(colors.RGB("pink"))
+
+    tapSound = audio.loadSound("assets/audio/tapSound.mp3")
+    buttonSound = audio.loadSound("assets/audio/buttonSound.mp3")
+    winSound = audio.loadSound("assets/audio/winSound.mp3")
+
     resetBoard()
 end
 
