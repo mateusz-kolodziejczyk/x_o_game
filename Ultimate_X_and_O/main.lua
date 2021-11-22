@@ -47,7 +47,7 @@ background.y = display.contentCenterY
 local titleText, startsTest, turnText, gameOverText
 local gameOverImage
 
-local forcedSquare, chosenSquare = 0, 0
+local mainSquare, subSquare = 0, 0
 -- Functions
 local resetBoard, move, drawBoard
 -----------------------------------------------------------------------------------------
@@ -120,17 +120,43 @@ local function nextPlayer(value)
 end
 
 -- carries out a valid move
-move = function(k)
+move = function(k, kk)
     -- determine location of valid move
     local square = squares[k]
 
     -- update ui and logic
     local filename = "assets/images/" .. players[player].name .. ".png"
-    local symbol = display.newImageRect(mainGroup, filename, size - 4 * gap, size - 4 * gap)
-    symbol.x = square.rect.x
-    symbol.y = square.rect.y
-    square.symbol = symbol
-    board[k] = players[player].value
+
+    -- Get the x/y of the suqare where the move is being made
+    local row, col = mylib.k2rc(kk)
+    local x = squares[k].rect.x + size*subboardScale*signs[col]
+    local y = squares[k].rect.y + size*subboardScale*signs[row]
+    print("xy: " .. "(" .. x .. "," .. y .. ")")
+    print(squares[k].rect.x)
+    local squareSize = 0
+    local symbol = display.newImageRect(mainGroup, filename, size * subboardScale, size * subboardScale)
+    symbol.x = x
+    symbol.y = y
+    square.subsquares[kk].symbol = symbol
+    subboards[k][kk] = players[player].value
+    squares[k].rect.alpha = 0.05
+    if board[kk] == 0 then
+        print("Board at " .. kk .. " is empty")
+        mainSquare = kk
+        squares[kk].rect.alpha = 0.5
+    else
+        mainSquare = 0
+    end
+    -- check if subboard is won
+    -- if it is fill in the board with the appropriate symbol
+    if mylib.isWin(subboards[k]) then
+        local filename = "assets/images/" .. players[player].name .. ".png"
+        local symbol = display.newImageRect(mainGroup, filename, size-4*gap, size-4*gap)
+        symbol.x = square.rect.x
+        symbol.y = square.rect.y
+        square.symbol = symbol
+        board[k] = players[player].value
+    end
     -- check if game win
     if mylib.isWin(board) then
         state = 'over'
@@ -151,6 +177,7 @@ end
 -- Checks if a move caused by tap event is valid
 -- False if invalid move
 local function checkMove(event)
+    print("main square: " .. mainSquare)
     -- determine location of tap on board
     print(players[player].name .. "'s move at square " .. event.target.k)
     -- current player must be human
@@ -158,13 +185,26 @@ local function checkMove(event)
         print("\t not waiting for human input - ignore move")
         return false
     end
-    -- current square must be empty
-    if board[event.target.k] ~= 0 then
+    -- check if the player can choose a square(mainsquare is 0 in that case)
+    if mainSquare == 0 then
+        -- current square must be empty if the player is choosing a new square
+        if board[event.target.k] ~= 0 then
+            print("\t cannot move to non empty space - ignore move")
+            return false
+        end
+        mainSquare = event.target.k
+        squares[event.target.k].rect.alpha = 0.5
+        return true
+    end
+
+    -- check that the subsquare is empty
+    -- this only runs if main square has already been chosen
+    if subboards[mainSquare][event.target.k] ~= 0 then
         print("\t cannot move to non empty space - ignore move")
         return false
     end
     -- implement valid move
-    move(event.target.k)
+    move(mainSquare, event.target.k)
 end
 
 -- reset game state (without unnecessary destroying)
@@ -185,6 +225,10 @@ resetBoard = function()
     board = {}
     for k = 1, 9 do
         board[k] = 0
+        subboards[k] = {}
+        for i = 1, 9 do
+            subboards[k][i] = 0
+        end
     end
     nextPlayer(1)
 end
@@ -211,8 +255,12 @@ local function createBoard()
         rect.k = k
         rect:addEventListener("tap", checkMove)
         squares[k] = {
-            rect = rect
+            rect = rect,
+            subsquares = {}
         }
+        for i = 1, 9 do
+            squares[k].subsquares[i] = {}
+        end
     end
     -- Transparent overlay
     gameOverImage = display.newRect(mainGroup, 0, 0, display.actualContentWidth, display.actualContentHeight)
