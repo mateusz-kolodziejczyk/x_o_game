@@ -139,6 +139,8 @@ move = function(k, kk)
     symbol.y = y
     square.subsquares[kk].symbol = symbol
     subboards[k][kk] = players[player].value
+
+    -- Apply the graphic changes and handle the logic to make sure the player is free to chooose if an occupied main square was chosen with kk
     squares[k].rect.alpha = 0.05
     if board[kk] == 0 then
         print("Board at " .. kk .. " is empty")
