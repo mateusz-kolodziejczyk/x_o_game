@@ -9,7 +9,7 @@ local rng = require("rng")
 local colors = require("colorsRGB")
 -- ai= require("first_space_player")
 -- ai=require("random_impact_player")
-ai = require("minimax_player")
+local ai = require("minimax_player")
 rng.randomseed(os.time())
 
 local backGroup = display.newGroup()
@@ -29,7 +29,7 @@ local players = {{
     wins = 0
 }, {
     name = "O",
-    human = true,
+    human = false,
     value = -1,
     wins = 0
 }}
@@ -113,9 +113,9 @@ local function nextPlayer(value)
     state = players[player].human and "waiting" or "thinking"
 
     if state == 'thinking' then
-        i = ai.move(board, players, player)
-        print("Chosen k: " .. i)
-        move(i)
+        local k, kk = ai.move(board, subboards, players, player, mainSquare)
+        print("Chosen k: " .. k .. "   Chosen kk: " .. kk)
+        move(k, kk)
     end
 end
 
@@ -158,7 +158,19 @@ move = function(k, kk)
         symbol.y = square.rect.y
         square.symbol = symbol
         board[k] = players[player].value
+        if k == kk then
+            mainSquare = 0
+        end
+    -- If the subboard is tied no symbol will be placed so the board will instead contain a new field.
+    elseif mylib.isTie(subboards[k]) then
+        board[k] = math.huge
+        mainSquare = 0
+
+        if k == kk then
+            mainSquare = 0
+        end
     end
+
     -- check if game win
     if mylib.isWin(board) then
         state = 'over'
@@ -211,11 +223,14 @@ end
 
 -- reset game state (without unnecessary destroying)
 resetBoard = function()
-
     -- tidy up of UI elements
     for _, square in ipairs(squares) do
         display.remove(square.symbol)
         square.symbol = nil
+        for _, subsquare in ipairs(square.subsquares) do
+            display.remove(subsquare.symbol)
+            subsquare.symbol = nil
+        end
     end
     local tieCount = gameCount - players[1].wins - players[2].wins
     local s = string.format("Games: %3d    %s: %d    %s: %d    tie: %d", gameCount, players[1].name, players[1].wins,
