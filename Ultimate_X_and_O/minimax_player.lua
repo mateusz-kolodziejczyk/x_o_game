@@ -52,6 +52,19 @@ function ai.evalSubboard(subboard)
     end
 end
 
+-- Evaluates the game state for the subboards
+function ai.evalSubboards(board, player, players)
+    local totalScore = 0
+    -- Check each subboard
+    for k = 1, 9 do
+        if board[k] ~= 0 then
+            local toAdd = board[k] == players[aiPlayer].value and subboardWON or -1*subboardWON 
+            totalScore = totalScore + toAdd
+        end
+    end
+    return totalScore
+end
+
 local function isAIPlayer(aiPlayer, player)
     return aiPlayer == player and true or false
 end
@@ -72,15 +85,16 @@ function ai.search(board, subboards, players, player, mainSquare, depth, previou
 
     -- Immediately return with score if it doesnt return 0
 
-    if ai.eval(board, isAIPlayer(aiPlayer, player)) ~= 0 then
-    
+    if ai.eval(board, isAIPlayer(aiPlayer, player)) ~= 0 then 
         return ai.eval(board, isAIPlayer(aiPlayer, player)), bestMove
     end
 
     -- check if search reached max depth
     if depth >= ai.maxDepth then
+        bestScore = ai.evalSubboards(board, player, players)
         return bestScore, bestMove
     end
+
     -- iterate over all possible moves
     for k = mainSquare, 9 do
         -- place piece 
@@ -91,19 +105,19 @@ function ai.search(board, subboards, players, player, mainSquare, depth, previou
                 if subboards[k][kk] == 0 then
                     subboards[k][kk] = players[player].value
                     -- If the move wins the subboard, change the main board value to the player value
+                    -- Also set the best move as that square
                     if mylib.isWin(subboards[k]) then
-                   
                         board[k] = players[player].value
-                        if subboardWON > bestScore and isAIPlayer(aiPlayer, player) then
-                            bestScore = subboardWON
-                            bestMove.k = k
-                            bestMove.kk = kk
-                        -- If its not the ai player, its the human player
-                        elseif -1*subboardWON > bestScore then
-                            bestScore = -1*subboardWON
-                            bestMove.k = k
-                            bestMove.kk = kk
-                        end 
+                        -- if subboardWON > bestScore and isAIPlayer(aiPlayer, player) then
+                        --     bestScore = subboardWON
+                        --     bestMove.k = k
+                        --     bestMove.kk = kk
+                        -- -- If its not the ai player, its the human player
+                        -- elseif -1*subboardWON > bestScore then
+                        --     bestScore = -1*subboardWON
+                        --     bestMove.k = k
+                        --     bestMove.kk = kk
+                        -- end 
 
                     -- If the move is a tie, change the value to math.huge
                     elseif mylib.isTie(subboards[k]) then
@@ -123,14 +137,13 @@ function ai.search(board, subboards, players, player, mainSquare, depth, previou
                     end
                     local score, _ = ai.search(board, subboards, players, player%2+1, nextSquare, depth+1, kk)
 
-                    --if score ~= 0 and score ~= math.huge and score ~= -math.huge then print (indent .. "current score: " .. score) end
                     -- Remove piece from subboard and reset board to 0 
                     subboards[k][kk] = 0
                     board[k] = 0
 
                     -- if score better than found to date update best score and best move
                     if score > bestScore then
-                        bestScore = score / 2
+                        bestScore = score
                         bestMove.k = k
                         bestMove.kk = kk
                     end
@@ -144,7 +157,8 @@ function ai.search(board, subboards, players, player, mainSquare, depth, previou
 
     end
 
-    --if debug then print(indent .. "OPTIMAL MOVE "..bestMove.k .. "," .. bestMove.kk .. " with score " ..bestScore) end
+    if debug then print(indent .. "OPTIMAL MOVE "..bestMove.k .. "," .. bestMove.kk .. " with score " ..bestScore) end
+
 
     -- return best score and best move
     return bestScore, bestMove
