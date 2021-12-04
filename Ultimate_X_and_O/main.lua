@@ -157,6 +157,7 @@ move = function(k, kk)
         symbol.x = square.rect.x
         symbol.y = square.rect.y
         square.symbol = symbol
+        square.rect.alpha = 0.05
         board[k] = players[player].value
         if k == kk then
             mainSquare = 0
@@ -226,6 +227,7 @@ resetBoard = function()
     -- tidy up of UI elements
     for _, square in ipairs(squares) do
         display.remove(square.symbol)
+        square.rect.alpha = 0.05
         square.symbol = nil
         for _, subsquare in ipairs(square.subsquares) do
             display.remove(subsquare.symbol)
